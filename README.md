@@ -1,5 +1,33 @@
 # ![Sabaki: An elegant Go/Baduk/Weiqi board and SGF editor for a more civilized age.](./banner.png)
 
+> ## ⚠️ Personal fork — study project, not Sabaki
+>
+> This repository is a **fork of [SabakiHQ/Sabaki](https://github.com/SabakiHQ/Sabaki)**
+> kept for **self-study**. It is a workbench for experimenting with the codebase,
+> **not a maintained release**.
+>
+> - **Changes here are not stable.** Commits may be rewritten, features may break
+>   or be removed without notice, and nothing has been reviewed by anyone.
+> - **For any serious use — playing, reviewing, or annotating games — use the
+>   original Sabaki:** <https://github.com/SabakiHQ/Sabaki>.
+> - **Licensing follows the original:** MIT, see [LICENSE.md](LICENSE.md).
+>   Copyright remains with Yichuan Shen and the Sabaki contributors; this fork
+>   claims nothing new over it.
+>
+> ### What this fork adds
+>
+> Only the edit-mode annotation tools differ from upstream:
+>
+> - **Coloured lines and arrows** — a six-colour palette while the Line or Arrow
+>   tool is active, stored as an optional third SGF field (`AR[dd:pq:red]`).
+> - **Dim tool (SGF `DD`)** — drag a rectangle to grey out an area. Uses the
+>   standard inherited `DD` property, with colours in a private `SBKDD`
+>   companion so other viewers still dim the right region.
+> - **Per-mark erasing** — right-click removes the segment you point at, or the
+>   topmost dimmed rectangle.
+>
+> Everything else is upstream Sabaki, unmodified in intent.
+
 [![Download the latest release](https://img.shields.io/github/downloads/SabakiHQ/Sabaki/latest/total?label=download)](https://github.com/SabakiHQ/Sabaki/releases)
 [![CI](https://github.com/SabakiHQ/Sabaki/workflows/CI/badge.svg?branch=master&event=push)](https://github.com/SabakiHQ/Sabaki/actions)
 [![Donate](https://img.shields.io/badge/donate-paypal-blue.svg)](https://www.paypal.me/yishn/5)
@@ -45,6 +73,11 @@ in the documentation.
 
 This project is licensed under the
 [MIT license](https://github.com/SabakiHQ/Sabaki/blob/master/LICENSE.md).
+
+This fork keeps that licence unchanged: it is distributed under the same MIT
+terms, and the original copyright notice in [LICENSE.md](LICENSE.md) applies in
+full. Using this repository does not grant any right to the Sabaki name beyond
+what the original project allows.
 
 ## Donators
 
