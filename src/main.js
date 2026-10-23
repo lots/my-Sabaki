@@ -135,7 +135,10 @@ function buildMenu(props = {}) {
 async function checkForUpdates({showFailDialogs = false} = {}) {
   try {
     let t = i18n.context('updater')
-    let info = await updater.check(`SabakiHQ/${app.name}`)
+    // The repo is spelled out rather than derived from `app.name`: this is a
+    // study fork whose releases, if any, are its own -- it must never offer to
+    // replace itself with upstream Sabaki.
+    let info = await updater.check('lots/my-Sabaki')
 
     if (info.hasUpdates) {
       dialog.showMessageBox(

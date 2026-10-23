@@ -36,7 +36,8 @@ let defaults = {
   'app.hide_busy_delay': 200,
   'app.lang': 'en',
   'app.loadgame_delay': 100,
-  'app.startup_check_updates': true,
+  // Study fork: don't phone home for upstream releases on every launch.
+  'app.startup_check_updates': false,
   'app.startup_check_updates_delay': 3000,
   'app.zoom_factor': 1,
   'autoplay.max_sec_per_move': 99,

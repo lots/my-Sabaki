@@ -1,22 +1,22 @@
 {
   "name": "sabaki",
-  "productName": "Sabaki",
+  "productName": "my-Sabaki",
   "version": "0.60.2",
-  "description": "An elegant Go/Baduk/Weiqi board and SGF editor for a more civilized age.",
+  "description": "Personal study fork of Sabaki. Unstable; use https://github.com/SabakiHQ/Sabaki instead.",
   "author": "Yichuan Shen <shen.yichuan@gmail.com>",
   "homepage": "http://sabaki.yichuanshen.de",
   "license": "MIT",
   "main": "./src/main.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SabakiHQ/Sabaki"
+    "url": "https://github.com/lots/my-Sabaki"
   },
   "bugs": {
     "url": "https://github.com/SabakiHQ/Sabaki/issues"
   },
   "build": {
-    "appId": "de.yichuanshen.sabaki",
-    "copyright": "Copyright © 2015-2026 Yichuan Shen",
+    "appId": "io.github.lots.mysabaki",
+    "copyright": "Copyright © 2015-2026 Yichuan Shen; study fork by lots. Not the original Sabaki.",
     "compression": "normal",
     "electronFuses": {
       "runAsNode": false,
@@ -31,7 +31,7 @@
     "linux": {
       "target": "AppImage",
       "category": "Game",
-      "artifactName": "sabaki-v${version}-linux-${arch}.${ext}"
+      "artifactName": "my-sabaki-v${version}-linux-${arch}.${ext}"
     },
     "flatpak": {
       "runtimeVersion": "23.08",
@@ -46,7 +46,7 @@
         "--filesystem=home",
         "--talk-name=org.freedesktop.Flatpak"
       ],
-      "artifactName": "sabaki-v${version}-linux-${arch}-beta.${ext}"
+      "artifactName": "my-sabaki-v${version}-linux-${arch}-beta.${ext}"
     },
     "mac": {
       "target": [
@@ -54,10 +54,10 @@
       ],
       "notarize": true,
       "category": "public.app-category.board-games",
-      "artifactName": "sabaki-v${version}-mac-${arch}.${ext}"
+      "artifactName": "my-sabaki-v${version}-mac-${arch}.${ext}"
     },
     "win": {
-      "artifactName": "sabaki-v${version}-win.exe"
+      "artifactName": "my-sabaki-v${version}-win-${arch}-setup.${ext}"
     },
     "nsis": {
       "oneClick": false,
