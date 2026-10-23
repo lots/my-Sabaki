@@ -141,6 +141,7 @@ export const markupCleanupProperties = {
   circle: ['CR'],
   line: ['LN'],
   arrow: ['AR'],
+  dim: ['DD', 'SBKDD'],
   label: ['LB', 'L'],
   comments: ['C', 'N'],
   annotations: ['DM', 'GB', 'GW', 'UC', 'BM', 'DO', 'IT', 'TE'],

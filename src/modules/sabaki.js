@@ -19,6 +19,14 @@ import * as gobantransformer from './gobantransformer.js'
 import * as gtplogger from './gtplogger.js'
 import * as helper from './helper.js'
 import * as sound from './sound.js'
+import {formatLineValue, normalizeLineColor} from './linecolor.js'
+import {
+  applyDimRectangle,
+  findDimRangeAt,
+  toDimEntries,
+  toDimRange,
+} from './dim.js'
+import {pickSegmentAt} from './hittest.js'
 
 deadstones.useFetch('./node_modules/@sabaki/deadstones/wasm/deadstones_bg.wasm')
 
@@ -35,6 +43,44 @@ const setting = {
       }
     },
   },
+}
+
+// Writes AR/LN for the lines and arrows of a node. Shared by the drawing tools
+// and the erase gesture so the two can never write them differently.
+function writeLineProperties(draft, nodeId, lines) {
+  draft.removeProperty(nodeId, 'AR')
+  draft.removeProperty(nodeId, 'LN')
+
+  for (let {v1, v2, type, color} of lines) {
+    let [p1, p2] = [v1, v2].map(sgf.stringifyVertex)
+    if (p1 === p2) continue
+
+    draft.addToProperty(
+      nodeId,
+      type === 'arrow' ? 'AR' : 'LN',
+      formatLineValue(p1, p2, color),
+    )
+  }
+}
+
+// Writes DD (always standard SGF) plus its private colour companion SBKDD.
+function writeDimProperties(draft, node, parentDims, ranges, colors) {
+  if (ranges.length === 0) {
+    // DD[] explicitly clears inherited dimming, so only drop the property when
+    // there is nothing to clear.
+    if (parentDims) draft.updateProperty(node.id, 'DD', [''])
+    else draft.removeProperty(node.id, 'DD')
+  } else {
+    draft.updateProperty(node.id, 'DD', ranges)
+  }
+
+  let colorValues = ranges
+    .filter((x) => colors[x] != null)
+    .map((x) => `${colors[x]}:${x}`)
+
+  if (colorValues.length > 0)
+    draft.updateProperty(node.id, 'SBKDD', colorValues)
+  else draft.removeProperty(node.id, 'SBKDD')
 }
 
 class Sabaki extends EventEmitter {
@@ -60,6 +106,10 @@ class Sabaki extends EventEmitter {
       // Bars
 
       selectedTool: 'stone_1',
+      // Colour painted by the line/arrow tools; null = the theme's line colour.
+      lineColor: null,
+      // Tint of the dim tool's rectangle; null = the theme's dim colour.
+      dimColor: null,
       scoringMethod: null,
       findText: '',
       findVertex: null,
@@ -938,7 +988,10 @@ class Sabaki extends EventEmitter {
 
   // Playing
 
-  clickVertex(vertex, {button = 0, ctrlKey = false, x = 0, y = 0} = {}) {
+  clickVertex(
+    vertex,
+    {button = 0, ctrlKey = false, x = 0, y = 0, cellOffset = null} = {},
+  ) {
     this.closeDrawer()
 
     let t = i18n.context('sabaki.play')
@@ -1070,10 +1123,15 @@ class Sabaki extends EventEmitter {
           )
 
           return
+        } else if (['line', 'arrow', 'dim'].includes(tool)) {
+          // Erase the mark under the cursor instead of drawing a new one
+
+          this.eraseMarkup(tool, vertex, cellOffset)
+          return
         }
       }
 
-      if (['line', 'arrow'].includes(tool)) {
+      if (['line', 'arrow', 'dim'].includes(tool)) {
         // Remember clicked vertex and pass as an argument the second time
 
         if (!this.editVertexData || this.editVertexData[0] !== tool) {
@@ -1401,48 +1459,81 @@ class Sabaki extends EventEmitter {
         let endVertex = argument
         if (!endVertex || helper.vertexEquals(vertex, endVertex)) return
 
-        // Check whether to remove a line
+        let lineColor = normalizeLineColor(this.state.lineColor)
 
-        let toDelete = board.lines.findIndex((x) =>
+        // Look for an existing line on the same segment. Drawing over a line of
+        // the same colour removes it; drawing over one in another colour just
+        // recolours it, so colours can be changed without erasing first.
+
+        let index = board.lines.findIndex((x) =>
           helper.equals([x.v1, x.v2], [vertex, endVertex]),
         )
 
-        if (toDelete === -1) {
-          toDelete = board.lines.findIndex((x) =>
+        if (index === -1) {
+          index = board.lines.findIndex((x) =>
             helper.equals([x.v1, x.v2], [endVertex, vertex]),
           )
 
           if (
-            toDelete >= 0 &&
+            index >= 0 &&
             tool !== 'line' &&
-            board.lines[toDelete].type === 'arrow'
+            board.lines[index].type === 'arrow'
           ) {
             // Do not delete after all
-            toDelete = -1
+            index = -1
           }
         }
 
         // Mutate board first, then apply changes to actual game tree
 
-        if (toDelete >= 0) {
-          board.lines.splice(toDelete, 1)
+        if (index >= 0) {
+          let existing = board.lines[index]
+
+          if (normalizeLineColor(existing.color) === lineColor) {
+            board.lines.splice(index, 1)
+          } else {
+            board.lines[index] = {...existing, color: lineColor}
+          }
         } else {
-          board.lines.push({v1: vertex, v2: endVertex, type: tool})
+          board.lines.push({
+            v1: vertex,
+            v2: endVertex,
+            type: tool,
+            color: lineColor,
+          })
         }
 
-        draft.removeProperty(node.id, 'AR')
-        draft.removeProperty(node.id, 'LN')
+        writeLineProperties(draft, node.id, board.lines)
+      } else if (tool === 'dim') {
+        let endVertex = argument
+        if (!endVertex) return
 
-        for (let {v1, v2, type} of board.lines) {
-          let [p1, p2] = [v1, v2].map(sgf.stringifyVertex)
-          if (p1 === p2) continue
+        // The dragged rectangle becomes one compressed DD range. Ranges already
+        // in effect here (including ones inherited from ancestors) are kept.
+        // Drawing it in the same colour removes it; drawing it in another colour
+        // recolours it, exactly like lines and arrows behave.
 
-          draft.addToProperty(
-            node.id,
-            type === 'arrow' ? 'AR' : 'LN',
-            [p1, p2].join(':'),
-          )
-        }
+        let color = normalizeLineColor(this.state.dimColor)
+        let range = toDimRange(vertex, endVertex)
+        let {ranges, colors} = applyDimRectangle(
+          board.dimmedRanges || [],
+          board.dimmedColors || {},
+          range,
+          color,
+        )
+
+        board.dimmedRanges = ranges
+        board.dimmedColors = colors
+        board.dimmed = toDimEntries(ranges, colors)
+
+        // DD is inherited, so what matters is whether the parent *effectively*
+        // dims anything -- it may inherit it from further up.
+        let parentBoard =
+          node.parentId == null ? null : gametree.getBoard(tree, node.parentId)
+        let parentDims =
+          parentBoard != null && (parentBoard.dimmedRanges || []).length > 0
+
+        writeDimProperties(draft, node, parentDims, ranges, colors)
       } else {
         // Mutate board first, then apply changes to actual game tree
 
@@ -1534,6 +1625,69 @@ class Sabaki extends EventEmitter {
     this.setCurrentTreePosition(newTree, node.id)
 
     this.events.emit('toolUse', {tool, vertex, argument})
+  }
+
+  // Right-clicking with the line, arrow or dim tool removes an existing mark
+  // instead of starting a new one. Where several marks of the same tool meet at
+  // the clicked vertex, the click's position inside the cell picks the one that
+  // was pointed at (see src/modules/hittest.js). For dimmed areas the newest
+  // rectangle containing the vertex is the one on top, so that one goes.
+  eraseMarkup(tool, vertex, cellOffset = null) {
+    let {gameTrees, gameIndex, treePosition} = this.state
+    let tree = gameTrees[gameIndex]
+    let board = gametree.getBoard(tree, treePosition)
+    let node = tree.get(treePosition)
+
+    if (tool === 'dim') {
+      let ranges = [...(board.dimmedRanges || [])]
+      let colors = {...board.dimmedColors}
+      let index = findDimRangeAt(ranges, vertex)
+
+      if (index === -1) return
+
+      let [range] = ranges.splice(index, 1)
+      delete colors[range]
+
+      board.dimmedRanges = ranges
+      board.dimmedColors = colors
+      board.dimmed = toDimEntries(ranges, colors)
+
+      // DD is inherited, so what matters is whether the parent *effectively*
+      // dims anything -- it may inherit it from further up.
+      let parentBoard =
+        node.parentId == null ? null : gametree.getBoard(tree, node.parentId)
+      let parentDims =
+        parentBoard != null && (parentBoard.dimmedRanges || []).length > 0
+      let newTree = tree.mutate((draft) =>
+        writeDimProperties(draft, node, parentDims, ranges, colors),
+      )
+
+      this.setCurrentTreePosition(newTree, node.id)
+      return
+    }
+
+    let touches = (x) =>
+      helper.vertexEquals(x.v1, vertex) || helper.vertexEquals(x.v2, vertex)
+    let candidates = board.lines.filter((x) => x.type === tool && touches(x))
+
+    if (candidates.length === 0) return
+
+    // Several marks can meet at one vertex; where the click landed inside the
+    // cell tells us which one was meant. Nothing to disambiguate => nothing
+    // to delete.
+    let picked = pickSegmentAt(candidates, vertex, cellOffset)
+
+    if (picked === -1) return
+
+    let target = candidates[picked]
+    let lines = board.lines.filter((x) => x !== target)
+    board.lines = lines
+
+    let newTree = tree.mutate((draft) =>
+      writeLineProperties(draft, node.id, lines),
+    )
+
+    this.setCurrentTreePosition(newTree, node.id)
   }
 
   // Navigation

@@ -246,6 +246,13 @@ exports.get = function (props = {}) {
               click: () => selectTool('arrow'),
             },
             {
+              // Ctrl+0 is taken by View > Zoom > Reset (and is the platform's
+              // "reset zoom" shortcut), so Dim takes its letter instead.
+              label: i18n.t('menu.edit', '&Dim Tool'),
+              accelerator: 'CmdOrCtrl+Shift+D',
+              click: () => selectTool('dim'),
+            },
+            {
               label: i18n.t('menu.edit', 'La&bel Tool'),
               accelerator: 'CmdOrCtrl+8',
               click: () => selectTool('label'),

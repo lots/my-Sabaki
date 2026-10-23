@@ -8,6 +8,8 @@ import {getAnalysisHeatMapCell} from '../modules/analysis.js'
 import * as gametree from '../modules/gametree.js'
 import * as gobantransformer from '../modules/gobantransformer.js'
 import * as helper from '../modules/helper.js'
+import {normalizeLineColor} from '../modules/linecolor.js'
+import {dimPaintValue, toDimEntries, toDimRange} from '../modules/dim.js'
 
 const t = i18n.context('Goban')
 const setting = {
@@ -117,6 +119,30 @@ export default class Goban extends Component {
     this.startVertex = vertex
   }
 
+  // Where inside the clicked cell the pointer was, as a fraction of the cell
+  // measured from its centre (+x right, +y down). Shudan gives us the raw mouse
+  // event, but `currentTarget` is only valid while the handler runs, so it has
+  // to be captured here rather than passed along.
+  getCellOffset(evt) {
+    let element = evt.currentTarget
+
+    if (
+      element == null ||
+      typeof element.getBoundingClientRect !== 'function'
+    ) {
+      return null
+    }
+
+    let rect = element.getBoundingClientRect()
+
+    if (rect.width === 0 || rect.height === 0) return null
+
+    return {
+      dx: (evt.clientX - (rect.left + rect.width / 2)) / rect.width,
+      dy: (evt.clientY - (rect.top + rect.height / 2)) / rect.height,
+    }
+  }
+
   handleVertexMouseUp(evt, vertex) {
     if (!this.mouseDown) return
 
@@ -128,6 +154,8 @@ export default class Goban extends Component {
 
     if (evt.x == null) evt.x = evt.clientX
     if (evt.y == null) evt.y = evt.clientY
+
+    evt.cellOffset = this.getCellOffset(evt)
 
     if (evt.line) {
       onLineDraw(evt)
@@ -238,6 +266,8 @@ export default class Goban extends Component {
       animateStonePlacement = true,
 
       drawLineMode = null,
+      lineColor = null,
+      dimColor = null,
       transformation = '',
       currentThemeId,
     },
@@ -280,6 +310,20 @@ export default class Goban extends Component {
         board.height,
       )
 
+    // Shudan only forwards {v1, v2, type, vertexSize} to its Line component, so
+    // the colour rides along in `type` (e.g. "arrow:red"). The patched renderer
+    // in src/vendor/shudanLine.js is what understands it.
+    let toShudanLine = (line) => {
+      let {v1, v2, type, color} = transformLine(line)
+      let normalized = normalizeLineColor(color)
+
+      return {
+        v1,
+        v2,
+        type: normalized == null ? type : `${type}:${normalized}`,
+      }
+    }
+
     // Calculate coordinates
 
     let getCoordFunctions = (coordinatesType) => {
@@ -317,7 +361,8 @@ export default class Goban extends Component {
 
     // Calculate lines
 
-    let drawTemporaryLine = !!drawLineMode && !!temporaryLine
+    let drawTemporaryLine =
+      !!drawLineMode && !!temporaryLine && drawLineMode !== 'dim'
     let lines = board.lines.filter(({v1, v2, type}) => {
       if (
         drawTemporaryLine &&
@@ -337,7 +382,39 @@ export default class Goban extends Component {
         v1: temporaryLine.v1,
         v2: temporaryLine.v2,
         type: drawLineMode,
+        color: lineColor,
       })
+
+    // Dimmed areas (SGF DD). Shudan's paint layer sits above the stones, which
+    // is exactly what a wash needs; territory painting in scoring/guess mode
+    // owns that layer, so dimming only takes it over when nothing else uses it.
+    // Each entry's colour becomes a distinct paint value (see src/modules/dim.js)
+    // so the patched Vertex can tag it with a per-colour class. While dragging a
+    // rectangle, the pending area is previewed in the selected colour too.
+
+    let dimPaintMap = null
+
+    if (paintMap.length === 0) {
+      let dimEntries = board.dimmed || []
+
+      if (drawLineMode === 'dim' && temporaryLine != null) {
+        let range = toDimRange(temporaryLine.v1, temporaryLine.v2)
+        dimEntries = dimEntries.concat(
+          toDimEntries([range], {[range]: normalizeLineColor(dimColor)}),
+        )
+      }
+
+      if (dimEntries.length > 0) {
+        dimPaintMap = board.signMap.map((row) => row.map((_) => 0))
+
+        for (let {vertex, color} of dimEntries) {
+          let [x, y] = vertex
+
+          if (dimPaintMap[y] == null) continue
+          dimPaintMap[y][x] = dimPaintValue(color)
+        }
+      }
+    }
 
     // Calculate ghost stones
 
@@ -474,7 +551,7 @@ export default class Goban extends Component {
 
     return h(BoundedGoban, {
       id: 'goban',
-      class: classNames({crosshair}),
+      class: classNames({crosshair, 'dim-area': dimPaintMap != null}),
       style: {top, left},
       innerProps: {ref: (el) => (this.element = el)},
 
@@ -494,11 +571,13 @@ export default class Goban extends Component {
         ghostStoneMap,
         transformation,
       ),
-      paintMap: gobantransformer.transformMap(paintMap, transformation, {
-        ignoreInvert: true,
-      }),
+      paintMap: gobantransformer.transformMap(
+        paintMap.length > 0 ? paintMap : dimPaintMap || [],
+        transformation,
+        {ignoreInvert: true},
+      ),
       heatMap: gobantransformer.transformMap(heatMap, transformation),
-      lines: lines.map(transformLine),
+      lines: lines.map(toShudanLine),
       selectedVertices: highlightVertices.map(transformVertex),
       dimmedVertices: dimmedStones.map(transformVertex),
 

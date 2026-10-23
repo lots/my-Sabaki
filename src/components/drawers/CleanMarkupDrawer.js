@@ -156,6 +156,10 @@ export default class CleanMarkupDrawer extends Component {
             text: t('Arrow markers'),
           }),
           h(CleanMarkupItem, {
+            id: 'cleanmarkup.dim',
+            text: t('Dimmed areas'),
+          }),
+          h(CleanMarkupItem, {
             id: 'cleanmarkup.label',
             text: t('Label markers'),
           }),

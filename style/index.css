@@ -257,6 +257,46 @@ header {
     margin-left: -10px;
     margin-top: -10px;
 }
+  /* Colour row for the line/arrow/dim tools. Kept compact so the nine tool
+     buttons and seven swatches still fit at the 526px minimum window width. */
+  #edit ul li.line-color-separator {
+    width: 1px;
+    height: 26px;
+    margin: 7px 6px;
+    background: rgba(0, 0, 0, .3);
+  }
+  #edit ul li.line-color {
+    margin: 0;
+  }
+  #edit ul li.line-color a {
+    width: 20px;
+  }
+  .line-color-swatch {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, .45);
+    background-clip: padding-box;
+    box-sizing: border-box;
+  }
+  /* "Theme colour": no explicit colour is stored, so the mark uses the theme's
+     own foreground colour. Split black/white so it reads as "not one of these". */
+  .line-color-swatch-default {
+    background: linear-gradient(135deg, #ffffff 0 50%, #000000 50% 100%);
+  }
+  .line-color-swatch-black { background-color: var(--line-color-black); }
+  .line-color-swatch-white { background-color: var(--line-color-white); }
+  .line-color-swatch-red { background-color: var(--line-color-red); }
+  .line-color-swatch-yellow { background-color: var(--line-color-yellow); }
+  .line-color-swatch-blue { background-color: var(--line-color-blue); }
+  .line-color-swatch-green { background-color: var(--line-color-green); }
+  #edit ul li.line-color.selected .line-color-swatch {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(0, 0, 0, .5);
+  }
 
 #autoplay label {
     color: rgba(255, 255, 255, .5);
@@ -1445,3 +1485,72 @@ header {
 .shudan-vertex.shudan-marker_point .shudan-marker {
   background: transparent !important;
 }
+
+
+/* Coloured lines & arrows (edit tools) */
+
+:root {
+  --line-color-black: #000000;
+  --line-color-white: #ffffff;
+  --line-color-red: #d0021b;
+  --line-color-yellow: #f2c300;
+  --line-color-blue: #1560d8;
+  --line-color-green: #129c3c;
+
+  /* SGF DD ("dim points") wash; themes can adjust these. */
+  --sabaki-dim-color: rgba(0, 0, 0, .44);
+  --sabaki-dim-color-black: rgba(0, 0, 0, .44);
+  --sabaki-dim-color-white: rgba(255, 255, 255, .58);
+  --sabaki-dim-color-red: rgba(208, 2, 27, .4);
+  --sabaki-dim-color-yellow: rgba(242, 195, 0, .4);
+  --sabaki-dim-color-blue: rgba(21, 96, 216, .4);
+  --sabaki-dim-color-green: rgba(18, 156, 60, .4);
+}
+
+/* The `path.` prefix outranks Shudan's `.shudan-line`/`.shudan-arrow` stroke
+   rule regardless of stylesheet order. Colours are added by the patched Line
+   renderer in src/vendor/shudanLine.js. */
+path.shudan-line-color-black { stroke: var(--line-color-black); }
+path.shudan-line-color-white { stroke: var(--line-color-white); }
+path.shudan-line-color-red { stroke: var(--line-color-red); }
+path.shudan-line-color-yellow { stroke: var(--line-color-yellow); }
+path.shudan-line-color-blue { stroke: var(--line-color-blue); }
+path.shudan-line-color-green { stroke: var(--line-color-green); }
+
+
+/* SGF DD ("dim points", edit "Dim" tool)
+
+   Shudan's paint layer sits above the stones, so dimming reuses it instead of
+   adding another overlay. Neutralise its black/white territory colours and its
+   corner-merging shadow so a dimmed rectangle reads as one flat grey area. */
+#goban.dim-area .shudan-vertex.shudan-paint_1 .shudan-paint::before {
+  background: var(--sabaki-dim-color);
+  box-shadow: none;
+  opacity: 1;
+}
+
+/* A dimmed rectangle drawn in one of the palette colours stores that colour in
+   the private SBKDD companion (DD itself stays standard SGF); the patched Vertex
+   in src/vendor/shudanVertex.js turns it into these classes. They come after the
+   default wash above, so they win at equal specificity. */
+#goban.dim-area .shudan-vertex.shudan-paint_color_black .shudan-paint::before {
+  background: var(--sabaki-dim-color-black);
+}
+#goban.dim-area .shudan-vertex.shudan-paint_color_white .shudan-paint::before {
+  background: var(--sabaki-dim-color-white);
+}
+#goban.dim-area .shudan-vertex.shudan-paint_color_red .shudan-paint::before {
+  background: var(--sabaki-dim-color-red);
+}
+#goban.dim-area .shudan-vertex.shudan-paint_color_yellow .shudan-paint::before {
+  background: var(--sabaki-dim-color-yellow);
+}
+#goban.dim-area .shudan-vertex.shudan-paint_color_blue .shudan-paint::before {
+  background: var(--sabaki-dim-color-blue);
+}
+#goban.dim-area .shudan-vertex.shudan-paint_color_green .shudan-paint::before {
+  background: var(--sabaki-dim-color-green);
+}
+
+
+

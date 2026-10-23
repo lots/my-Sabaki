@@ -56,6 +56,7 @@ let defaults = {
   'cleanmarkup.circle': true,
   'cleanmarkup.comments': false,
   'cleanmarkup.cross': true,
+  'cleanmarkup.dim': true,
   'cleanmarkup.hotspots': false,
   'cleanmarkup.label': true,
   'cleanmarkup.line': true,

@@ -6,6 +6,8 @@ import {
   parseCompressedVertices,
 } from '@sabaki/sgf'
 import {getId} from './utils.js'
+import {parseLineValue} from './linecolor.js'
+import {normalizeDimValue, parseDimColors, toDimEntries} from './dim.js'
 
 const alpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
@@ -267,9 +269,27 @@ export function getBoard(tree, id) {
       }
     }
 
+    // Dimmed areas (SGF DD). DD is inherited, so an ancestor's setting carries
+    // down until a node sets its own value; DD[] (empty) clears it. Colours live
+    // in the private SBKDD companion and follow the same node as the DD they
+    // belong to.
+
+    let dimmedRanges, dimmedColors
+
+    if (node.data.DD != null) {
+      dimmedRanges = node.data.DD.map(normalizeDimValue).filter((x) => x !== '')
+      dimmedColors = parseDimColors(node.data.SBKDD, dimmedRanges)
+    } else {
+      dimmedRanges = baseboard.dimmedRanges || []
+      dimmedColors = baseboard.dimmedColors || {}
+    }
+
     Object.assign(board, {
       markers: board.signMap.map((row) => row.map((_) => null)),
       lines: [],
+      dimmedRanges,
+      dimmedColors,
+      dimmed: toDimEntries(dimmedRanges, dimmedColors),
       childrenInfo: [],
       siblingsInfo: [],
     })
@@ -320,12 +340,15 @@ export function getBoard(tree, id) {
       if (node.data[type] == null) continue
 
       for (let composed of node.data[type]) {
-        let sep = composed.indexOf(':')
-        let [v1, v2] = [composed.slice(0, sep), composed.slice(sep + 1)].map(
-          parseVertex,
-        )
+        let {points, color} = parseLineValue(composed)
+        let [v1, v2] = points.map(parseVertex)
 
-        board.lines.push({v1, v2, type: type === 'AR' ? 'arrow' : 'line'})
+        board.lines.push({
+          v1,
+          v2,
+          type: type === 'AR' ? 'arrow' : 'line',
+          color,
+        })
       }
     }
 

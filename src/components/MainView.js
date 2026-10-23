@@ -24,6 +24,14 @@ export default class MainView extends Component {
       sabaki.setState({selectedTool: evt.tool})
     }
 
+    this.handleLineColorButtonClick = (evt) => {
+      sabaki.setState({lineColor: evt.color ?? null})
+    }
+
+    this.handleDimColorButtonClick = (evt) => {
+      sabaki.setState({dimColor: evt.color ?? null})
+    }
+
     this.handleFindButtonClick = (evt) =>
       sabaki.findMove(evt.step, {
         vertex: this.props.findVertex,
@@ -105,6 +113,8 @@ export default class MainView extends Component {
       currentThemeId,
 
       selectedTool,
+      lineColor,
+      dimColor,
       findText,
       findVertex,
     },
@@ -166,9 +176,11 @@ export default class MainView extends Component {
 
           playVariation,
           drawLineMode:
-            mode === 'edit' && ['arrow', 'line'].includes(selectedTool)
+            mode === 'edit' && ['arrow', 'line', 'dim'].includes(selectedTool)
               ? selectedTool
               : null,
+          lineColor,
+          dimColor,
           transformation: boardTransformation,
 
           onVertexClick: this.handleGobanVertexClick,
@@ -198,7 +210,11 @@ export default class MainView extends Component {
         h(EditBar, {
           mode,
           selectedTool,
+          lineColor,
+          dimColor,
           onToolButtonClick: this.handleToolButtonClick,
+          onLineColorButtonClick: this.handleLineColorButtonClick,
+          onDimColorButtonClick: this.handleDimColorButtonClick,
         }),
 
         h(GuessBar, {
