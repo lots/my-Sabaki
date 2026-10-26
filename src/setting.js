@@ -35,6 +35,7 @@ let defaults = {
   'app.enable_hardware_acceleration': true,
   'app.hide_busy_delay': 200,
   'app.lang': 'en',
+  'app.last_directory': null,
   'app.loadgame_delay': 100,
   // Study fork: don't phone home for upstream releases on every launch.
   'app.startup_check_updates': false,

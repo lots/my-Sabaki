@@ -16,7 +16,7 @@
 >
 > ### What this fork adds
 >
-> Only the edit-mode annotation tools differ from upstream:
+> The annotation tools, plus one convenience fix:
 >
 > - **Coloured lines and arrows** — a six-colour palette while the Line or Arrow
 >   tool is active, stored as an optional third SGF field (`AR[dd:pq:red]`).
@@ -25,6 +25,8 @@
 >   companion so other viewers still dim the right region.
 > - **Per-mark erasing** — right-click removes the segment you point at, or the
 >   topmost dimmed rectangle.
+> - **Dialogs remember their folder** — Open and Save start where you last were
+>   instead of back at the OS default.
 >
 > Everything else is upstream Sabaki, unmodified in intent.
 

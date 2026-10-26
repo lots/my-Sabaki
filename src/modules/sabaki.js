@@ -1,6 +1,6 @@
 import fs from 'fs'
 import EventEmitter from 'events'
-import {basename, extname} from 'path'
+import {basename, dirname, extname} from 'path'
 import {ipcRenderer} from 'electron'
 import {h} from 'preact'
 import {v4 as uuid} from 'uuid'
@@ -81,6 +81,26 @@ function writeDimProperties(draft, node, parentDims, ranges, colors) {
   if (colorValues.length > 0)
     draft.updateProperty(node.id, 'SBKDD', colorValues)
   else draft.removeProperty(node.id, 'SBKDD')
+}
+
+// The file dialogs start where the last one left off. Windows' common dialogs
+// only remember that for the lifetime of the process, so the folder is kept in
+// the settings file and handed to the dialog as `defaultPath`.
+function dialogDirectory() {
+  let directory = setting.get('app.last_directory')
+
+  // A remembered folder can disappear (moved, unmounted, deleted); fall back to
+  // the OS default rather than pointing the dialog at nothing.
+  return directory != null && fs.existsSync(directory) ? directory : undefined
+}
+
+function rememberDirectory(filename) {
+  let directory = filename == null ? null : dirname(filename)
+
+  if (directory == null || directory === '.' || !fs.existsSync(directory))
+    return
+
+  setting.set('app.last_directory', directory)
 }
 
 class Sabaki extends EventEmitter {
@@ -640,6 +660,7 @@ class Sabaki extends EventEmitter {
 
     if (!filename) {
       let result = await dialog.showOpenDialog({
+        defaultPath: dialogDirectory(),
         properties: ['openFile'],
         filters: [
           ...fileformats.meta,
@@ -648,8 +669,10 @@ class Sabaki extends EventEmitter {
       })
 
       if (result) filename = result[0]
-      if (filename)
+      if (filename) {
+        rememberDirectory(filename)
         this.loadFile(filename, {suppressAskForSave: true, clearHistory})
+      }
 
       return
     }
@@ -684,6 +707,10 @@ class Sabaki extends EventEmitter {
 
       this.setState({representedFilename: filename})
       this.fileHash = this.generateFileHash()
+
+      // Covers files opened by drag & drop, the command line, or a second
+      // window, so the next Open starts in the folder they came from too.
+      rememberDirectory(filename)
 
       if (setting.get('game.goto_end_after_loading')) {
         this.goToEnd()
@@ -771,6 +798,7 @@ class Sabaki extends EventEmitter {
     if (!filename || (confirmExtension && extname(filename) !== '.sgf')) {
       let cancel = false
       let result = await dialog.showSaveDialog({
+        defaultPath: filename ?? dialogDirectory(),
         filters: [
           fileformats.sgf.meta,
           {name: t('All Files'), extensions: ['*']},
@@ -791,6 +819,8 @@ class Sabaki extends EventEmitter {
 
     this.treeHash = this.generateTreeHash()
     this.fileHash = this.generateFileHash()
+
+    rememberDirectory(filename)
 
     return true
   }
