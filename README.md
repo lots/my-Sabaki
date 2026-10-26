@@ -1,5 +1,7 @@
 # ![Sabaki: An elegant Go/Baduk/Weiqi board and SGF editor for a more civilized age.](./banner.png)
 
+**English** · [简体中文](README.zh-CN.md)
+
 > ## ⚠️ Personal fork — study project, not Sabaki
 >
 > This repository is a **fork of [SabakiHQ/Sabaki](https://github.com/SabakiHQ/Sabaki)**
