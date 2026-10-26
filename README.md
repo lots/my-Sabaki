@@ -32,6 +32,25 @@
 [![CI](https://github.com/SabakiHQ/Sabaki/workflows/CI/badge.svg?branch=master&event=push)](https://github.com/SabakiHQ/Sabaki/actions)
 [![Donate](https://img.shields.io/badge/donate-paypal-blue.svg)](https://www.paypal.me/yishn/5)
 
+## Colour and dimming
+
+![Coloured lines and arrows, and dimmed areas, in my-Sabaki](./img/markup-demo.png)
+
+The picture is rendered from [`sgf/ff4_ex_new.sgf`](sgf/ff4_ex_new.sgf) — the SGF FF[4]
+conformance example saved back through my-Sabaki — so it shows exactly what the app
+writes to disk:
+
+- **Coloured lines and arrows.** The blue and red marks are ordinary `LN`/`AR` values
+  with an optional colour field appended: `AR[ok:gq:red]`, `LN[ec:ak:blue]`. Remove the
+  suffix and the file is plain FF[4] again, so other viewers still draw the marks.
+- **Dimmed areas.** The rectangles come from the standard, inherited `DD` property
+  (`DD[kq:os][dq:hs][ad:cj][qd:sj]`). Their tints are not smuggled into `DD`; they live in
+  the private `SBKDD` companion (`SBKDD[blue:ad:cj][red:qd:sj]`), so a viewer that only
+  understands `DD` still greys out the right region — just in its own colour. The two
+  rectangles along the bottom carry no `SBKDD` entry and use the theme's default wash.
+- **Coexistence.** The uncoloured arrows and lines are the ones that were already in the
+  example file; coloured and uncoloured marks mix freely in one node.
+
 ## Features
 
 - Fuzzy stone placement
