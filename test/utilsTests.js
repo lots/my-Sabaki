@@ -1,6 +1,10 @@
-import assert from 'assert'
+﻿import assert from 'assert'
 
-import {cycleAreaValue, markupCleanupProperties} from '../src/modules/utils.js'
+import {
+  cycleAreaValue,
+  markupCleanupProperties,
+  scoringMethodForRules,
+} from '../src/modules/utils.js'
 
 // cycleAreaValue backs the manual territory overrides in scoring/estimator mode.
 // Area values are -1 (white) / 0 (neutral) / 1 (black), and `steps` advances a
@@ -45,5 +49,47 @@ describe('markupCleanupProperties', () => {
         `${category} props should be SGF idents`,
       )
     }
+  })
+})
+
+// scoringMethodForRules maps a record's SGF RU value onto the scoring method
+// Sabaki preselects, so a Chinese-rules game is not scored Japanese-style by
+// accident. Anything unrecognised returns null, letting the user's last choice
+// stand.
+describe('scoringMethodForRules', () => {
+  it('reads area-scoring rule sets', () => {
+    for (let rules of [
+      'Chinese',
+      'Chinese 2002',
+      'AGA',
+      'NZ',
+      'New Zealand',
+      'Ing',
+      'GOE',
+      'Tromp-Taylor',
+      'area',
+    ]) {
+      assert.strictEqual(scoringMethodForRules(rules), 'area', rules)
+    }
+  })
+
+  it('reads territory-scoring rule sets', () => {
+    for (let rules of ['Japanese', 'Korean', 'Japanese (1989)', 'territory']) {
+      assert.strictEqual(scoringMethodForRules(rules), 'territory', rules)
+    }
+  })
+
+  it('is case and whitespace insensitive', () => {
+    assert.strictEqual(scoringMethodForRules('  CHINESE '), 'area')
+    assert.strictEqual(scoringMethodForRules(' japanese'), 'territory')
+  })
+
+  it('returns null for unknown or missing rules', () => {
+    assert.strictEqual(scoringMethodForRules('Some Local Club Rules'), null)
+    assert.strictEqual(scoringMethodForRules('French'), null)
+    assert.strictEqual(scoringMethodForRules(''), null)
+    assert.strictEqual(scoringMethodForRules('   '), null)
+    assert.strictEqual(scoringMethodForRules(null), null)
+    assert.strictEqual(scoringMethodForRules(undefined), null)
   })
 })

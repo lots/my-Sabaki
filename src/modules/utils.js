@@ -128,6 +128,39 @@ export function cycleAreaValue(value, steps) {
   return ((value + 1 + steps) % 3) - 1
 }
 
+// Which scoring method a record's rules imply, from the SGF `RU` property.
+// Returns 'area', 'territory', or null when the rules are missing or unknown,
+// in which case the caller keeps whatever method the user last picked.
+//
+// The rule sets named by the SGF spec, plus the spellings that turn up in real
+// records. Matching is on substrings so that values like "Japanese (1989)" or
+// "Chinese 2002" still work.
+const AREA_RULES = [
+  'chinese',
+  'aga',
+  'new zealand',
+  'nz',
+  'ing',
+  'goe', // Ing rules as named in the spec
+  'tromp',
+  'taylor',
+  'area',
+]
+
+const TERRITORY_RULES = ['japanese', 'korean', 'territory']
+
+export function scoringMethodForRules(value) {
+  if (typeof value !== 'string') return null
+
+  let rules = value.trim().toLowerCase()
+  if (rules === '') return null
+
+  if (AREA_RULES.some((r) => rules.includes(r))) return 'area'
+  if (TERRITORY_RULES.some((r) => rules.includes(r))) return 'territory'
+
+  return null
+}
+
 // The file to open that was passed on the command line at launch, or null.
 // `argv[0]` is the binary; everything that isn't a file to open is filtered out:
 // flags (any leading '-', so Chromium's '--no-sandbox' and macOS's '-psn_...'

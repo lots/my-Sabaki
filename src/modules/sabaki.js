@@ -260,6 +260,11 @@ class Sabaki extends EventEmitter {
     this.history = []
     this.recordHistory()
 
+    // Set when the user picks a scoring method by hand; cleared whenever a
+    // different game becomes active so the next record's RU property decides
+    // again (see resolveScoringMethod).
+    this.scoringMethodOverride = null
+
     // Bind state to settings
     window.sabaki.setting.onDidChange(({key, value}) => {
       this.updateSettingState(key)
@@ -431,6 +436,9 @@ class Sabaki extends EventEmitter {
       let iterations = setting.get('score.estimator_iterations')
       let tree = gameTrees[gameIndex]
 
+      // Pick area or territory from the record's rules before scoring starts.
+      this.setState({scoringMethod: this.resolveScoringMethod()})
+
       deadstones
         .guess(gametree.getBoard(tree, treePosition).signMap, {
           finished: mode === 'scoring',
@@ -445,6 +453,30 @@ class Sabaki extends EventEmitter {
 
     this.setState(stateChange)
     this.events.emit('modeChange')
+  }
+
+  // The method actually used for scoring: an explicit choice for this game wins,
+  // then whatever the record's RU property implies, then the last method the
+  // user picked (so hand-annotated records without RU behave consistently).
+  resolveScoringMethod() {
+    if (this.scoringMethodOverride != null) return this.scoringMethodOverride
+
+    let {gameIndex, gameTrees} = this.state
+    let tree = gameTrees[gameIndex]
+    let rules = tree == null ? null : gametree.getRootProperty(tree, 'RU')
+
+    return helper.scoringMethodForRules(rules) ?? setting.get('scoring.method')
+  }
+
+  // Called by the Score drawer and the Play > Scoring Method menu.
+  setScoringMethod(method) {
+    if (!['area', 'territory'].includes(method)) return
+
+    this.scoringMethodOverride = method
+    this.setState({scoringMethod: method})
+
+    // Remember it as the fallback for records that carry no usable RU.
+    setting.set('scoring.method', method)
   }
 
   focusCommentBox() {
@@ -763,6 +795,9 @@ class Sabaki extends EventEmitter {
     await helper.wait(setting.get('app.loadgame_delay'))
 
     if (gameTrees.length > 0) {
+      // A new record: no hand-picked scoring method carries over.
+      this.scoringMethodOverride = null
+
       this.setState({
         representedFilename: null,
         gameIndex: 0,
@@ -1745,6 +1780,10 @@ class Sabaki extends EventEmitter {
 
     let prevGameIndex = this.state.gameIndex
     let prevTreePosition = this.state.treePosition
+
+    // Switched to another game in the collection: its own RU decides the
+    // scoring method again, so forget any hand-picked one.
+    if (gameIndex !== prevGameIndex) this.scoringMethodOverride = null
 
     this.setState({
       playVariation: null,

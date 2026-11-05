@@ -15,6 +15,8 @@ export {
   normalizeEndings,
   wait,
   getScore,
+  cycleAreaValue,
+  scoringMethodForRules,
 } from './utils.js'
 
 export const linebreak = process.platform === 'win32' ? '\r\n' : '\n'

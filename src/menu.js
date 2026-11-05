@@ -44,6 +44,7 @@ exports.get = function (props = {}) {
     showCommentBox,
     showLeftSidebar,
     engineGameOngoing,
+    scoringMethod,
   } = props
 
   let data = [
@@ -176,6 +177,28 @@ exports.get = function (props = {}) {
             sabaki.setMode(
               sabaki.state.mode === 'scoring' ? 'play' : 'scoring',
             ),
+        },
+        {
+          // Area/territory. The active one is checked, and leaving a record's
+          // RU property to decide is the default until a method is picked here
+          // or in the Score drawer.
+          label: i18n.t('menu.play', 'Scoring &Method'),
+          submenu: [
+            {
+              label: i18n.t('menu.play', '&Area'),
+              type: 'radio',
+              checked: scoringMethod === 'area',
+              accelerator: 'CmdOrCtrl+Alt+A',
+              click: () => sabaki.setScoringMethod('area'),
+            },
+            {
+              label: i18n.t('menu.play', '&Territory'),
+              type: 'radio',
+              checked: scoringMethod === 'territory',
+              accelerator: 'CmdOrCtrl+Alt+T',
+              click: () => sabaki.setScoringMethod('territory'),
+            },
+          ],
         },
       ],
     },

@@ -8,10 +8,6 @@ import {noop, getScore} from '../../modules/helper.js'
 import Drawer from './Drawer.js'
 
 const t = i18n.context('ScoreDrawer')
-const setting = {
-  get: (key) => window.sabaki.setting.get(key),
-  set: (key, value) => window.sabaki.setting.set(key, value),
-}
 
 class ScoreRow extends Component {
   render({method, score, komi, handicap, sign}) {
@@ -69,9 +65,10 @@ export default class ScoreDrawer extends Component {
   constructor() {
     super()
 
-    this.handleTerritoryButtonClick = () =>
-      setting.set('scoring.method', 'territory')
-    this.handleAreaButtonClick = () => setting.set('scoring.method', 'area')
+    // Goes through sabaki so the choice also overrides the method implied by
+    // this record's RU property, and is remembered for records without one.
+    this.handleTerritoryButtonClick = () => sabaki.setScoringMethod('territory')
+    this.handleAreaButtonClick = () => sabaki.setScoringMethod('area')
     this.handleCloseButtonClick = () => sabaki.closeDrawer()
 
     this.handleSubmitButtonClick = (evt) => {

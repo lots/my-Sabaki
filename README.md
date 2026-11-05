@@ -18,7 +18,7 @@
 >
 > ### What this fork adds
 >
-> The annotation tools, plus one convenience fix:
+> The annotation tools, plus two convenience fixes:
 >
 > - **Coloured lines and arrows** — a six-colour palette while the Line or Arrow
 >   tool is active, stored as an optional third SGF field (`AR[dd:pq:red]`).
@@ -29,6 +29,10 @@
 >   topmost dimmed rectangle.
 > - **Dialogs remember their folder** — Open and Save start where you last were
 >   instead of back at the OS default.
+> - **Scoring follows the record's rules** — a game with `RU[Chinese]` opens
+>   scoring in *area* mode, `RU[Japanese]` in *territory* mode. Override it in
+>   `Play → Scoring Method` (`Ctrl+Alt+A` / `Ctrl+Alt+T`) or the Score drawer;
+>   records without a usable `RU` keep your last choice.
 >
 > Everything else is upstream Sabaki, unmodified in intent.
 
