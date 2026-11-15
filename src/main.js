@@ -9,6 +9,17 @@ const {
   Menu,
 } = require('electron')
 const {resolve} = require('path')
+const {getPortableDirectory} = require('./portable')
+
+// Portable runs keep everything -- settings, themes, Electron's own caches --
+// next to the executable, so the folder can live on a USB stick and carry its
+// own state. Must run before ./setting is required, since that reads the path.
+let portableDir = getPortableDirectory()
+
+if (portableDir != null) {
+  app.setPath('userData', resolve(portableDir, 'data'))
+}
+
 const i18n = require('./i18n')
 const setting = require('./setting')
 const updater = require('./updater')

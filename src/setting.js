@@ -3,12 +3,11 @@ const fs = require('fs')
 const path = require('path')
 const {app, BrowserWindow} = require('electron')
 
-const portableDir = process.env.PORTABLE_EXECUTABLE_DIR
-
+// main.js points userData at <app folder>/data for portable runs, and leaves it
+// at %APPDATA%\<app> otherwise. One source of truth here means the two cannot
+// disagree about where settings live.
 for (let dir of [
-  (exports.userDataDirectory = portableDir
-    ? path.join(portableDir, 'Sabaki')
-    : app.getPath('userData')),
+  (exports.userDataDirectory = app.getPath('userData')),
   (exports.themesDirectory = path.join(exports.userDataDirectory, 'themes')),
 ]) {
   try {
@@ -20,10 +19,15 @@ exports.settingsPath = path.join(exports.userDataDirectory, 'settings.json')
 exports.stylesPath = path.join(exports.userDataDirectory, 'styles.css')
 
 if (!fs.existsSync(exports.stylesPath)) {
-  fs.writeFileSync(
-    exports.stylesPath,
-    `/* This stylesheet is loaded when ${app.name} starts up. */`,
-  )
+  try {
+    fs.writeFileSync(
+      exports.stylesPath,
+      `/* This stylesheet is loaded when ${app.name} starts up. */`,
+    )
+  } catch (err) {
+    // Read-only media (a CD, a write-protected stick): not fatal, the app just
+    // runs without a user stylesheet.
+  }
 }
 
 let settings = {}

@@ -1,0 +1,15 @@
+This file switches my-Sabaki into portable mode.
+
+While it sits next to my-Sabaki.exe, the app keeps its settings, themes, engine
+list and Electron caches in the "data" folder beside it instead of
+%APPDATA%\my-Sabaki on the host machine -- so the whole folder can live on a USB
+stick and carry its own state.
+
+本文件用于开启 my-Sabaki 的便携模式。
+
+只要它和 my-Sabaki.exe 位于同一目录，程序就会把设置、主题、引擎列表以及 Electron
+缓存保存在旁边的 data 文件夹中，而不是宿主机的 %APPDATA%\my-Sabaki；因此整个文件夹
+可以放在 U 盘里随身携带。
+
+Delete this file to go back to the normal per-user installation behaviour.
+删除本文件即恢复为常规的「按用户存放设置」行为。
